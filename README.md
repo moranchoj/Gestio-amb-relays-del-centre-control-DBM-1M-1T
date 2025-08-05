@@ -46,6 +46,23 @@ Aquest sistema implementa el control automàtic d'una bomba que impulsa aigua de
 
 ## Instal·lació Ràpida
 
+### Per a Venus OS 3.64 Large (recomanat)
+```bash
+# 1. Transferir fitxers via SCP
+scp -r Gestio-amb-relays-del-centre-control-DBM-1M-1T/ root@[IP_VENUS_OS]:/data/
+
+# 2. Connectar-se al sistema Venus OS
+ssh root@[IP_VENUS_OS]
+
+# 3. Instal·lar dependències
+cd /data/Gestio-amb-relays-del-centre-control-DBM-1M-1T
+npm install
+
+# 4. Executar Node-RED
+node-red flows.json
+```
+
+### Per a Raspberry Pi OS (tradicional)
 ```bash
 # 1. Clonar el repositori
 git clone https://github.com/moranchoj/Gestio-amb-relays-del-centre-control-DBM-1M-1T.git
@@ -59,6 +76,13 @@ node-red flows.json
 ```
 
 **Dashboard disponible a**: http://[IP_RASPBERRY]:1880/ui
+
+### Mètodes de Transferència de Fitxers
+
+Per a Venus OS, podeu utilitzar diversos mètodes:
+- **SCP**: `scp -r projecte/ root@[IP_VENUS_OS]:/data/`
+- **USB**: Muntatge i còpia manual de fitxers
+- **Descàrrega directa**: wget o curl si està disponible
 
 ## Configuració Bàsica
 
@@ -113,10 +137,25 @@ Consulteu [INSTALACIO.md](INSTALACIO.md) per:
 
 ## Compatibilitat
 
-- **Raspberry Pi**: 3B+, 4B, Zero 2W
+### Sistemes Operatius
+- **Venus OS 3.64 Large** (recomanat) - Victron Energy
+- **Raspberry Pi OS**: 3B+, 4B, Zero 2W
+- **Altres sistemes Linux** amb suport GPIO
+
+### Software
 - **Node-RED**: v3.1.0+
+- **Node.js**: v16.0+
 - **Victron Cerbo GX**: Firmware 3.63+
 - **HAT PiRelay**: v2 (compatible amb altres HAT de relés)
+
+### Venus OS vs Raspberry Pi OS
+| Característica | Venus OS 3.64 Large | Raspberry Pi OS |
+|----------------|---------------------|-----------------|
+| Usuari per defecte | `root` | `pi` |
+| Gestor de paquets | `opkg` | `apt` |
+| GPIO/I2C | Pre-configurat | Requereix configuració |
+| Directori persistent | `/data` | `/home/pi` |
+| Actualitzacions | Mantenen `/data` | Actualització completa |
 
 ## Llicència
 
