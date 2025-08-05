@@ -1,0 +1,33 @@
+{
+  "thresholds": {
+    "tankA_min_percent": 20,
+    "tankB_min_percent": 40,
+    "tankB_max_percent": 95
+  },
+  "timing": {
+    "execution_hour": 12,
+    "execution_minute": 0,
+    "max_duration_minutes": 3
+  },
+  "mqtt": {
+    "broker_host": "cerbo-gx.local",
+    "broker_port": 1883,
+    "topic_tankA": "N/b827eb123456/tank/3/Level",
+    "topic_tankB": "N/b827eb123456/tank/4/Level"
+  },
+  "gpio": {
+    "relay_3_pin": 6,
+    "relay_4_pin": 5
+  },
+  "email": {
+    "enabled": false,
+    "gmail_user": "",
+    "gmail_password": "",
+    "recipient": "",
+    "subject": "Informe maniobra bomba DBM"
+  },
+  "system": {
+    "last_update": "2024-01-01T12:00:00.000Z",
+    "version": "1.0.0"
+  }
+}

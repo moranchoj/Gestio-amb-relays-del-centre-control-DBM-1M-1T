@@ -1,0 +1,1186 @@
+[
+  {
+    "id": "tab_main",
+    "type": "tab",
+    "label": "Control Bomba DBM",
+    "disabled": false,
+    "info": "Flux principal per al control automatitzat de la bomba entre dipòsits A i B",
+    "env": []
+  },
+  {
+    "id": "tab_dashboard",
+    "type": "tab",
+    "label": "Dashboard",
+    "disabled": false,
+    "info": "Dashboard de monitorització i configuració",
+    "env": []
+  },
+  {
+    "id": "ui_group_monitoring",
+    "type": "ui_group",
+    "name": "Monitorització",
+    "tab": "ui_tab_monitoring",
+    "order": 1,
+    "disp": true,
+    "width": "12",
+    "collapse": false,
+    "className": ""
+  },
+  {
+    "id": "ui_group_config",
+    "type": "ui_group",
+    "name": "Configuració",
+    "tab": "ui_tab_config",
+    "order": 1,
+    "disp": true,
+    "width": "12",
+    "collapse": false,
+    "className": ""
+  },
+  {
+    "id": "ui_group_history",
+    "type": "ui_group",
+    "name": "Històric",
+    "tab": "ui_tab_history",
+    "order": 1,
+    "disp": true,
+    "width": "12",
+    "collapse": false,
+    "className": ""
+  },
+  {
+    "id": "ui_tab_monitoring",
+    "type": "ui_tab",
+    "name": "Monitorització",
+    "icon": "dashboard",
+    "order": 1,
+    "disabled": false,
+    "hidden": false
+  },
+  {
+    "id": "ui_tab_config",
+    "type": "ui_tab",
+    "name": "Configuració",
+    "icon": "settings",
+    "order": 2,
+    "disabled": false,
+    "hidden": false
+  },
+  {
+    "id": "ui_tab_history",
+    "type": "ui_tab",
+    "name": "Històric",
+    "icon": "show_chart",
+    "order": 3,
+    "disabled": false,
+    "hidden": false
+  },
+  {
+    "id": "mqtt_broker",
+    "type": "mqtt-broker",
+    "name": "Cerbo GX",
+    "broker": "cerbo-gx.local",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "load_config",
+    "type": "inject",
+    "z": "tab_main",
+    "name": "Carregar Configuració",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 170,
+    "y": 80,
+    "wires": [
+      [
+        "read_config"
+      ]
+    ]
+  },
+  {
+    "id": "read_config",
+    "type": "file in",
+    "z": "tab_main",
+    "name": "Llegir config-parametres-logica.json",
+    "filename": "./config-parametres-logica.json",
+    "filenameType": "str",
+    "format": "utf8",
+    "chunk": false,
+    "sendError": false,
+    "encoding": "none",
+    "allProps": false,
+    "x": 430,
+    "y": 80,
+    "wires": [
+      [
+        "parse_config"
+      ]
+    ]
+  },
+  {
+    "id": "parse_config",
+    "type": "json",
+    "z": "tab_main",
+    "name": "Parse JSON Config",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 720,
+    "y": 80,
+    "wires": [
+      [
+        "store_config"
+      ]
+    ]
+  },
+  {
+    "id": "store_config",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Guardar Configuració",
+    "func": "// Guardar configuració en context global\nglobal.set('config', msg.payload);\n\n// Configurar MQTT broker\nvar mqttConfig = msg.payload.mqtt;\nif (mqttConfig) {\n    global.set('mqtt_tankA_topic', mqttConfig.topic_tankA);\n    global.set('mqtt_tankB_topic', mqttConfig.topic_tankB);\n}\n\nmsg.payload = \"Configuració carregada correctament\";\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 990,
+    "y": 80,
+    "wires": [
+      [
+        "config_loaded_debug"
+      ]
+    ]
+  },
+  {
+    "id": "config_loaded_debug",
+    "type": "debug",
+    "z": "tab_main",
+    "name": "Config Loaded",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1240,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "cron_scheduler",
+    "type": "cronplus",
+    "z": "tab_main",
+    "name": "Programador Diari",
+    "outputField": "payload",
+    "timeZone": "",
+    "storeName": "",
+    "commandResponseMsgOutput": "output1",
+    "defaultLocation": "",
+    "defaultLocationType": "default",
+    "outputs": 1,
+    "options": [
+      {
+        "name": "daily_execution",
+        "topic": "daily_execution",
+        "payloadType": "default",
+        "payload": "",
+        "expressionType": "cron",
+        "expression": "0 12 * * *",
+        "location": "",
+        "offset": "0",
+        "solarType": "all",
+        "solarEvents": "sunrise,sunset"
+      }
+    ],
+    "x": 170,
+    "y": 160,
+    "wires": [
+      [
+        "start_maneuver"
+      ]
+    ]
+  },
+  {
+    "id": "start_maneuver",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Iniciar Maniobra",
+    "func": "var config = global.get('config');\nif (!config) {\n    node.error(\"Configuració no carregada\");\n    return null;\n}\n\n// Marcar l'inici de la maniobra\nvar maneuver = {\n    start_time: new Date(),\n    tankA_initial: null,\n    tankB_initial: null,\n    tankA_final: null,\n    tankB_final: null,\n    duration: 0,\n    reason: \"\",\n    status: \"iniciada\"\n};\n\nglobal.set('current_maneuver', maneuver);\nglobal.set('maneuver_active', false);\n\nmsg.payload = \"Maniobra iniciada - llegint nivells inicials\";\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 160,
+    "wires": [
+      [
+        "request_tank_levels"
+      ]
+    ]
+  },
+  {
+    "id": "request_tank_levels",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Sol·licitar Nivells",
+    "func": "// Enviar sol·licituds per llegir els nivells actuals\nvar tankA_msg = { topic: \"read_tankA\" };\nvar tankB_msg = { topic: \"read_tankB\" };\n\nreturn [tankA_msg, tankB_msg];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 680,
+    "y": 160,
+    "wires": [
+      [
+        "mqtt_tankA_read"
+      ],
+      [
+        "mqtt_tankB_read"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_tankA_read",
+    "type": "mqtt in",
+    "z": "tab_main",
+    "name": "Nivell Dipòsit A",
+    "topic": "N/b827eb123456/tank/3/Level",
+    "qos": "2",
+    "datatype": "auto-detect",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 950,
+    "y": 120,
+    "wires": [
+      [
+        "process_tankA_level"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_tankB_read",
+    "type": "mqtt in",
+    "z": "tab_main",
+    "name": "Nivell Dipòsit B",
+    "topic": "N/b827eb123456/tank/4/Level",
+    "qos": "2",
+    "datatype": "auto-detect",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 950,
+    "y": 200,
+    "wires": [
+      [
+        "process_tankB_level"
+      ]
+    ]
+  },
+  {
+    "id": "process_tankA_level",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Processar Nivell A",
+    "func": "var level = parseFloat(msg.payload.value || msg.payload);\nif (isNaN(level)) {\n    node.warn(\"Nivell del dipòsit A no vàlid: \" + msg.payload);\n    return null;\n}\n\n// Guardar el nivell actual\nglobal.set('tankA_level', level);\n\n// Si estem en una maniobra, guardar com a nivell inicial si encara no s'ha guardat\nvar maneuver = global.get('current_maneuver');\nif (maneuver && maneuver.tankA_initial === null) {\n    maneuver.tankA_initial = level;\n    global.set('current_maneuver', maneuver);\n}\n\nmsg.payload = {\n    tank: 'A',\n    level: level,\n    timestamp: new Date()\n};\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1200,
+    "y": 120,
+    "wires": [
+      [
+        "check_start_conditions"
+      ]
+    ]
+  },
+  {
+    "id": "process_tankB_level",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Processar Nivell B",
+    "func": "var level = parseFloat(msg.payload.value || msg.payload);\nif (isNaN(level)) {\n    node.warn(\"Nivell del dipòsit B no vàlid: \" + msg.payload);\n    return null;\n}\n\n// Guardar el nivell actual\nglobal.set('tankB_level', level);\n\n// Si estem en una maniobra, guardar com a nivell inicial si encara no s'ha guardat\nvar maneuver = global.get('current_maneuver');\nif (maneuver && maneuver.tankB_initial === null) {\n    maneuver.tankB_initial = level;\n    global.set('current_maneuver', maneuver);\n}\n\nmsg.payload = {\n    tank: 'B',\n    level: level,\n    timestamp: new Date()\n};\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1200,
+    "y": 200,
+    "wires": [
+      [
+        "check_start_conditions"
+      ]
+    ]
+  },
+  {
+    "id": "check_start_conditions",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Verificar Condicions Inici",
+    "func": "var config = global.get('config');\nvar maneuver = global.get('current_maneuver');\nvar maneuverActive = global.get('maneuver_active');\n\nif (!config || !maneuver || maneuverActive) {\n    return null;\n}\n\n// Verificar si tenim tots els nivells inicials\nif (maneuver.tankA_initial === null || maneuver.tankB_initial === null) {\n    return null;\n}\n\nvar tankA_level = maneuver.tankA_initial;\nvar tankB_level = maneuver.tankB_initial;\n\n// Condicions d'inici:\n// 1. Dipòsit A > llindar mínim\n// 2. Dipòsit B < llindar mínim per omplir\nvar canStart = (tankA_level >= config.thresholds.tankA_min_percent) && \n               (tankB_level <= config.thresholds.tankB_min_percent);\n\nif (canStart) {\n    global.set('maneuver_active', true);\n    maneuver.status = \"bomba activada\";\n    global.set('current_maneuver', maneuver);\n    \n    msg.payload = {\n        action: \"start_pump\",\n        tankA_level: tankA_level,\n        tankB_level: tankB_level,\n        message: `Bomba activada - A:${tankA_level}% B:${tankB_level}%`\n    };\n    \n    return [msg, null];\n} else {\n    maneuver.reason = `Condicions no complides - A:${tankA_level}% (min:${config.thresholds.tankA_min_percent}%) B:${tankB_level}% (max:${config.thresholds.tankB_min_percent}%)`;\n    maneuver.status = \"no iniciada\";\n    global.set('current_maneuver', maneuver);\n    \n    msg.payload = {\n        action: \"abort\",\n        reason: maneuver.reason\n    };\n    \n    return [null, msg];\n}",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1480,
+    "y": 160,
+    "wires": [
+      [
+        "activate_pump"
+      ],
+      [
+        "log_maneuver"
+      ]
+    ]
+  },
+  {
+    "id": "activate_pump",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Activar Bomba",
+    "func": "// Activar relés 3 i 4 (GPIO 6 i 5)\nmsg.payload = {\n    relay3: 1,  // GPIO 6\n    relay4: 1   // GPIO 5\n};\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 140,
+    "y": 320,
+    "wires": [
+      [
+        "gpio_relay3",
+        "gpio_relay4",
+        "start_timer"
+      ]
+    ]
+  },
+  {
+    "id": "gpio_relay3",
+    "type": "rpi-gpio out",
+    "z": "tab_main",
+    "name": "Relé 3 (GPIO 6)",
+    "pin": "6",
+    "set": true,
+    "level": "0",
+    "freq": "",
+    "out": "out",
+    "bcm": true,
+    "x": 400,
+    "y": 280,
+    "wires": []
+  },
+  {
+    "id": "gpio_relay4",
+    "type": "rpi-gpio out",
+    "z": "tab_main",
+    "name": "Relé 4 (GPIO 5)",
+    "pin": "5",
+    "set": true,
+    "level": "0",
+    "freq": "",
+    "out": "out",
+    "bcm": true,
+    "x": 400,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "start_timer",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Iniciar Cronòmetre",
+    "func": "var config = global.get('config');\nvar maxDuration = config.timing.max_duration_minutes * 60 * 1000; // convertir a ms\n\n// Programar parada per temps màxim\nsetTimeout(function() {\n    var isActive = global.get('maneuver_active');\n    if (isActive) {\n        var stopMsg = {\n            payload: {\n                action: \"stop_pump\",\n                reason: \"Temps màxim superat\"\n            }\n        };\n        node.send(stopMsg);\n    }\n}, maxDuration);\n\nmsg.payload = \"Cronòmetre iniciat\";\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 360,
+    "wires": [
+      [
+        "monitor_levels"
+      ]
+    ]
+  },
+  {
+    "id": "monitor_levels",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Monitoritzar Nivells",
+    "func": "// Iniciar monitorització contínua cada 10 segons\nvar config = global.get('config');\n\nvar monitorInterval = setInterval(function() {\n    var isActive = global.get('maneuver_active');\n    if (!isActive) {\n        clearInterval(monitorInterval);\n        return;\n    }\n    \n    var tankA_level = global.get('tankA_level');\n    var tankB_level = global.get('tankB_level');\n    \n    // Condicions de parada:\n    // 1. Dipòsit A cau per sota del mínim\n    // 2. Dipòsit B arriba al màxim\n    if (tankA_level < config.thresholds.tankA_min_percent) {\n        var stopMsg = {\n            payload: {\n                action: \"stop_pump\",\n                reason: `Dipòsit A per sota del mínim (${tankA_level}%)`\n            }\n        };\n        node.send(stopMsg);\n    } else if (tankB_level >= config.thresholds.tankB_max_percent) {\n        var stopMsg = {\n            payload: {\n                action: \"stop_pump\",\n                reason: `Dipòsit B ha arribat al màxim (${tankB_level}%)`\n            }\n        };\n        node.send(stopMsg);\n    }\n}, 10000); // Cada 10 segons\n\nmsg.payload = \"Monitorització iniciada\";\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 670,
+    "y": 360,
+    "wires": [
+      [
+        "stop_pump"
+      ]
+    ]
+  },
+  {
+    "id": "stop_pump",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Aturar Bomba",
+    "func": "if (msg.payload.action === \"stop_pump\") {\n    // Desactivar relés\n    var relayMsg = {\n        payload: {\n            relay3: 0,\n            relay4: 0\n        }\n    };\n    \n    // Finalitzar maniobra\n    var maneuver = global.get('current_maneuver');\n    if (maneuver) {\n        maneuver.tankA_final = global.get('tankA_level');\n        maneuver.tankB_final = global.get('tankB_level');\n        maneuver.duration = Math.round((new Date() - maneuver.start_time) / 1000);\n        maneuver.reason = msg.payload.reason;\n        maneuver.status = \"completada\";\n        \n        global.set('current_maneuver', maneuver);\n        global.set('maneuver_active', false);\n    }\n    \n    return [relayMsg, msg];\n}\n\nreturn [null, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 140,
+    "y": 480,
+    "wires": [
+      [
+        "gpio_relay3_off",
+        "gpio_relay4_off"
+      ],
+      [
+        "log_maneuver"
+      ]
+    ]
+  },
+  {
+    "id": "gpio_relay3_off",
+    "type": "rpi-gpio out",
+    "z": "tab_main",
+    "name": "Relé 3 OFF",
+    "pin": "6",
+    "set": true,
+    "level": "1",
+    "freq": "",
+    "out": "out",
+    "bcm": true,
+    "x": 380,
+    "y": 460,
+    "wires": []
+  },
+  {
+    "id": "gpio_relay4_off",
+    "type": "rpi-gpio out",
+    "z": "tab_main",
+    "name": "Relé 4 OFF",
+    "pin": "5",
+    "set": true,
+    "level": "1",
+    "freq": "",
+    "out": "out",
+    "bcm": true,
+    "x": 380,
+    "y": 500,
+    "wires": []
+  },
+  {
+    "id": "log_maneuver",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Registrar Maniobra",
+    "func": "var maneuver = global.get('current_maneuver');\nif (!maneuver) {\n    return null;\n}\n\n// Preparar la línia CSV\nvar timestamp = maneuver.start_time.toISOString();\nvar duration = maneuver.duration || 0;\nvar tankA_initial = maneuver.tankA_initial || 0;\nvar tankB_initial = maneuver.tankB_initial || 0;\nvar tankA_final = maneuver.tankA_final || tankA_initial;\nvar tankB_final = maneuver.tankB_final || tankB_initial;\nvar reason = (maneuver.reason || \"\").replace(/;/g, \",\"); // Reemplaçar ; per evitar problemes CSV\nvar status = maneuver.status || \"unknown\";\n\nvar csvLine = `${timestamp};${duration};${tankA_initial};${tankB_initial};${tankA_final};${tankB_final};${reason};${status}\\n`;\n\nmsg.payload = csvLine;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 480,
+    "wires": [
+      [
+        "save_to_history"
+      ]
+    ]
+  },
+  {
+    "id": "save_to_history",
+    "type": "file",
+    "z": "tab_main",
+    "name": "Guardar a Històric",
+    "filename": "./historic-maniobres.csv",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": false,
+    "overwriteFile": "append",
+    "encoding": "none",
+    "x": 880,
+    "y": 480,
+    "wires": [
+      [
+        "send_email"
+      ]
+    ]
+  },
+  {
+    "id": "send_email",
+    "type": "function",
+    "z": "tab_main",
+    "name": "Preparar Correu",
+    "func": "var config = global.get('config');\nvar maneuver = global.get('current_maneuver');\n\nif (!config || !config.email.enabled || !maneuver) {\n    return null;\n}\n\n// Preparar el missatge de correu\nvar subject = config.email.subject + \" - \" + new Date().toLocaleDateString('ca-ES');\nvar body = `Informe de maniobra de bomba DBM:\\n\\n`;\nbody += `Hora d'inici: ${maneuver.start_time.toLocaleString('ca-ES')}\\n`;\nbody += `Durada: ${maneuver.duration} segons\\n`;\nbody += `Nivell inicial dipòsit A: ${maneuver.tankA_initial}%\\n`;\nbody += `Nivell inicial dipòsit B: ${maneuver.tankB_initial}%\\n`;\nbody += `Nivell final dipòsit A: ${maneuver.tankA_final}%\\n`;\nbody += `Nivell final dipòsit B: ${maneuver.tankB_final}%\\n`;\nbody += `Motiu de finalització: ${maneuver.reason}\\n`;\nbody += `Estat: ${maneuver.status}\\n`;\n\nmsg.to = config.email.recipient;\nmsg.subject = subject;\nmsg.payload = body;\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1120,
+    "y": 480,
+    "wires": [
+      [
+        "email_node"
+      ]
+    ]
+  },
+  {
+    "id": "email_node",
+    "type": "e-mail",
+    "z": "tab_main",
+    "server": "smtp.gmail.com",
+    "port": "587",
+    "secure": true,
+    "tls": true,
+    "name": "Gmail",
+    "dname": "Enviar Informe",
+    "x": 1320,
+    "y": 480,
+    "wires": []
+  },
+  {
+    "id": "ui_tankA_level",
+    "type": "ui_gauge",
+    "z": "tab_dashboard",
+    "name": "Nivell Dipòsit A",
+    "group": "ui_group_monitoring",
+    "order": 1,
+    "width": 6,
+    "height": 4,
+    "gtype": "gage",
+    "title": "Dipòsit A (Inferior)",
+    "label": "%",
+    "format": "{{value}}",
+    "min": 0,
+    "max": 100,
+    "colors": [
+      "#ca3838",
+      "#e6e600",
+      "#00b500"
+    ],
+    "seg1": 20,
+    "seg2": 80,
+    "diff": false,
+    "className": "",
+    "x": 180,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "ui_tankB_level",
+    "type": "ui_gauge",
+    "z": "tab_dashboard",
+    "name": "Nivell Dipòsit B",
+    "group": "ui_group_monitoring",
+    "order": 2,
+    "width": 6,
+    "height": 4,
+    "gtype": "gage",
+    "title": "Dipòsit B (Superior)",
+    "label": "%",
+    "format": "{{value}}",
+    "min": 0,
+    "max": 100,
+    "colors": [
+      "#ca3838",
+      "#e6e600",
+      "#00b500"
+    ],
+    "seg1": 40,
+    "seg2": 90,
+    "diff": false,
+    "className": "",
+    "x": 180,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "ui_last_maneuver",
+    "type": "ui_text",
+    "z": "tab_dashboard",
+    "group": "ui_group_monitoring",
+    "order": 3,
+    "width": 12,
+    "height": 4,
+    "name": "Última Maniobra",
+    "label": "Última Maniobra:",
+    "format": "{{msg.payload}}",
+    "layout": "col-center",
+    "className": "",
+    "x": 180,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "ui_pump_status",
+    "type": "ui_led",
+    "z": "tab_dashboard",
+    "order": 4,
+    "group": "ui_group_monitoring",
+    "width": 3,
+    "height": 1,
+    "label": "Bomba Activa",
+    "labelPlacement": "left",
+    "labelAlignment": "left",
+    "colorForValue": [
+      {
+        "color": "#ff0000",
+        "value": "false",
+        "valueType": "bool"
+      },
+      {
+        "color": "#008000",
+        "value": "true",
+        "valueType": "bool"
+      }
+    ],
+    "allowColorForValueInMessage": false,
+    "shape": "circle",
+    "showGlow": true,
+    "name": "Estat Bomba",
+    "x": 180,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "update_dashboard",
+    "type": "function",
+    "z": "tab_dashboard",
+    "name": "Actualitzar Dashboard",
+    "func": "// Actualitzar nivells en temps real\nvar tankA_level = global.get('tankA_level') || 0;\nvar tankB_level = global.get('tankB_level') || 0;\nvar maneuverActive = global.get('maneuver_active') || false;\nvar lastManeuver = global.get('current_maneuver');\n\n// Missatge per als nivells\nvar tankA_msg = { payload: tankA_level };\nvar tankB_msg = { payload: tankB_level };\nvar pump_msg = { payload: maneuverActive };\n\n// Missatge per a l'última maniobra\nvar maneuver_text = \"Cap maniobra registrada\";\nif (lastManeuver) {\n    maneuver_text = `Inici: ${lastManeuver.start_time.toLocaleString('ca-ES')}<br/>`;\n    maneuver_text += `Durada: ${lastManeuver.duration || 0}s<br/>`;\n    maneuver_text += `A: ${lastManeuver.tankA_initial || 0}% → ${lastManeuver.tankA_final || 0}%<br/>`;\n    maneuver_text += `B: ${lastManeuver.tankB_initial || 0}% → ${lastManeuver.tankB_final || 0}%<br/>`;\n    maneuver_text += `Estat: ${lastManeuver.status}<br/>`;\n    if (lastManeuver.reason) {\n        maneuver_text += `Motiu: ${lastManeuver.reason}`;\n    }\n}\nvar maneuver_msg = { payload: maneuver_text };\n\nreturn [tankA_msg, tankB_msg, pump_msg, maneuver_msg];",
+    "outputs": 4,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 160,
+    "wires": [
+      [
+        "ui_tankA_level"
+      ],
+      [
+        "ui_tankB_level"
+      ],
+      [
+        "ui_pump_status"
+      ],
+      [
+        "ui_last_maneuver"
+      ]
+    ]
+  },
+  {
+    "id": "dashboard_timer",
+    "type": "inject",
+    "z": "tab_dashboard",
+    "name": "Timer Dashboard",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "5",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 170,
+    "y": 160,
+    "wires": [
+      [
+        "update_dashboard"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_tankA_min",
+    "type": "ui_numeric",
+    "z": "tab_dashboard",
+    "name": "Llindar Mínim A",
+    "label": "Dipòsit A - Mínim (%)",
+    "tooltip": "Nivell mínim del dipòsit A per activar la bomba",
+    "group": "ui_group_config",
+    "order": 1,
+    "width": 6,
+    "height": 1,
+    "wrap": false,
+    "passthru": true,
+    "topic": "tankA_min",
+    "topicType": "str",
+    "min": "10",
+    "max": "30",
+    "step": 1,
+    "className": "",
+    "format": "{{value}}",
+    "x": 180,
+    "y": 360,
+    "wires": [
+      [
+        "validate_config"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_tankB_min",
+    "type": "ui_numeric",
+    "z": "tab_dashboard",
+    "name": "Llindar Mínim B",
+    "label": "Dipòsit B - Mínim (%)",
+    "tooltip": "Nivell mínim del dipòsit B per iniciar el transvasament",
+    "group": "ui_group_config",
+    "order": 2,
+    "width": 6,
+    "height": 1,
+    "wrap": false,
+    "passthru": true,
+    "topic": "tankB_min",
+    "topicType": "str",
+    "min": "20",
+    "max": "89",
+    "step": 1,
+    "className": "",
+    "format": "{{value}}",
+    "x": 180,
+    "y": 400,
+    "wires": [
+      [
+        "validate_config"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_tankB_max",
+    "type": "ui_numeric",
+    "z": "tab_dashboard",
+    "name": "Llindar Màxim B",
+    "label": "Dipòsit B - Màxim (%)",
+    "tooltip": "Nivell màxim del dipòsit B per aturar la bomba",
+    "group": "ui_group_config",
+    "order": 3,
+    "width": 6,
+    "height": 1,
+    "wrap": false,
+    "passthru": true,
+    "topic": "tankB_max",
+    "topicType": "str",
+    "min": "90",
+    "max": "100",
+    "step": 1,
+    "className": "",
+    "format": "{{value}}",
+    "x": 180,
+    "y": 440,
+    "wires": [
+      [
+        "validate_config"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_hour",
+    "type": "ui_numeric",
+    "z": "tab_dashboard",
+    "name": "Hora Execució",
+    "label": "Hora d'execució diària",
+    "tooltip": "Hora del dia per executar la maniobra (9-17h)",
+    "group": "ui_group_config",
+    "order": 4,
+    "width": 3,
+    "height": 1,
+    "wrap": false,
+    "passthru": true,
+    "topic": "execution_hour",
+    "topicType": "str",
+    "min": "9",
+    "max": "17",
+    "step": 1,
+    "className": "",
+    "format": "{{value}}",
+    "x": 180,
+    "y": 480,
+    "wires": [
+      [
+        "validate_config"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_duration",
+    "type": "ui_numeric",
+    "z": "tab_dashboard",
+    "name": "Durada Màxima",
+    "label": "Durada màxima (minuts)",
+    "tooltip": "Temps màxim de funcionament de la bomba",
+    "group": "ui_group_config",
+    "order": 5,
+    "width": 3,
+    "height": 1,
+    "wrap": false,
+    "passthru": true,
+    "topic": "max_duration",
+    "topicType": "str",
+    "min": "1",
+    "max": "5",
+    "step": 1,
+    "className": "",
+    "format": "{{value}}",
+    "x": 180,
+    "y": 520,
+    "wires": [
+      [
+        "validate_config"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_save",
+    "type": "ui_button",
+    "z": "tab_dashboard",
+    "name": "Guardar Configuració",
+    "group": "ui_group_config",
+    "order": 6,
+    "width": 12,
+    "height": 1,
+    "passthru": false,
+    "label": "Guardar Configuració",
+    "tooltip": "Desa els canvis a la configuració",
+    "color": "",
+    "bgcolor": "#AD1625",
+    "className": "",
+    "icon": "save",
+    "payload": "",
+    "payloadType": "str",
+    "topic": "save_config",
+    "topicType": "str",
+    "x": 200,
+    "y": 560,
+    "wires": [
+      [
+        "save_config"
+      ]
+    ]
+  },
+  {
+    "id": "validate_config",
+    "type": "function",
+    "z": "tab_dashboard",
+    "name": "Validar Configuració",
+    "func": "// Emmagatzemar temporalment els canvis de configuració\nvar tempConfig = flow.get('temp_config') || {};\n\nswitch(msg.topic) {\n    case 'tankA_min':\n        tempConfig.tankA_min_percent = msg.payload;\n        break;\n    case 'tankB_min':\n        tempConfig.tankB_min_percent = msg.payload;\n        break;\n    case 'tankB_max':\n        tempConfig.tankB_max_percent = msg.payload;\n        break;\n    case 'execution_hour':\n        tempConfig.execution_hour = msg.payload;\n        break;\n    case 'max_duration':\n        tempConfig.max_duration_minutes = msg.payload;\n        break;\n}\n\nflow.set('temp_config', tempConfig);\n\n// Validacions\nvar errors = [];\nif (tempConfig.tankA_min_percent && (tempConfig.tankA_min_percent < 10 || tempConfig.tankA_min_percent > 30)) {\n    errors.push(\"Llindar mínim A ha d'estar entre 10% i 30%\");\n}\nif (tempConfig.tankB_min_percent && (tempConfig.tankB_min_percent < 20 || tempConfig.tankB_min_percent > 89)) {\n    errors.push(\"Llindar mínim B ha d'estar entre 20% i 89%\");\n}\nif (tempConfig.tankB_max_percent && (tempConfig.tankB_max_percent < 90 || tempConfig.tankB_max_percent > 100)) {\n    errors.push(\"Llindar màxim B ha d'estar entre 90% i 100%\");\n}\nif (tempConfig.tankB_min_percent && tempConfig.tankB_max_percent && \n    tempConfig.tankB_min_percent >= tempConfig.tankB_max_percent) {\n    errors.push(\"El llindar mínim de B ha de ser menor que el màxim\");\n}\n\nif (errors.length > 0) {\n    msg.payload = \"Errors de validació: \" + errors.join(\", \");\n    return [null, msg];\n}\n\nmsg.payload = \"Configuració vàlida\";\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 460,
+    "wires": [
+      [
+        "ui_config_status"
+      ],
+      [
+        "ui_config_status"
+      ]
+    ]
+  },
+  {
+    "id": "ui_config_status",
+    "type": "ui_text",
+    "z": "tab_dashboard",
+    "group": "ui_group_config",
+    "order": 7,
+    "width": 12,
+    "height": 1,
+    "name": "Estat Configuració",
+    "label": "Estat:",
+    "format": "{{msg.payload}}",
+    "layout": "row-left",
+    "className": "",
+    "x": 720,
+    "y": 460,
+    "wires": []
+  },
+  {
+    "id": "save_config",
+    "type": "function",
+    "z": "tab_dashboard",
+    "name": "Desar Configuració",
+    "func": "var currentConfig = global.get('config') || {};\nvar tempConfig = flow.get('temp_config') || {};\n\n// Aplicar els canvis\nif (tempConfig.tankA_min_percent !== undefined) {\n    currentConfig.thresholds.tankA_min_percent = tempConfig.tankA_min_percent;\n}\nif (tempConfig.tankB_min_percent !== undefined) {\n    currentConfig.thresholds.tankB_min_percent = tempConfig.tankB_min_percent;\n}\nif (tempConfig.tankB_max_percent !== undefined) {\n    currentConfig.thresholds.tankB_max_percent = tempConfig.tankB_max_percent;\n}\nif (tempConfig.execution_hour !== undefined) {\n    currentConfig.timing.execution_hour = tempConfig.execution_hour;\n}\nif (tempConfig.max_duration_minutes !== undefined) {\n    currentConfig.timing.max_duration_minutes = tempConfig.max_duration_minutes;\n}\n\n// Actualitzar timestamp\ncurrentConfig.system.last_update = new Date().toISOString();\n\n// Guardar a context global\nglobal.set('config', currentConfig);\n\n// Preparar per desar a fitxer\nmsg.payload = JSON.stringify(currentConfig, null, 2);\nflow.set('temp_config', {});\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 560,
+    "wires": [
+      [
+        "write_config_file"
+      ]
+    ]
+  },
+  {
+    "id": "write_config_file",
+    "type": "file",
+    "z": "tab_dashboard",
+    "name": "Escriure config-parametres-logica.json",
+    "filename": "./config-parametres-logica.json",
+    "filenameType": "str",
+    "appendNewline": false,
+    "createDir": false,
+    "overwriteFile": "true",
+    "encoding": "none",
+    "x": 760,
+    "y": 560,
+    "wires": [
+      [
+        "config_saved_msg"
+      ]
+    ]
+  },
+  {
+    "id": "config_saved_msg",
+    "type": "function",
+    "z": "tab_dashboard",
+    "name": "Missatge Desat",
+    "func": "msg.payload = \"Configuració desada correctament - \" + new Date().toLocaleTimeString('ca-ES');\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 740,
+    "y": 620,
+    "wires": [
+      [
+        "ui_config_status"
+      ]
+    ]
+  },
+  {
+    "id": "ui_history_period",
+    "type": "ui_dropdown",
+    "z": "tab_dashboard",
+    "name": "Període Històric",
+    "label": "Seleccionar període:",
+    "tooltip": "Període de temps a mostrar a l'històric",
+    "place": "Seleccionar...",
+    "group": "ui_group_history",
+    "order": 1,
+    "width": 6,
+    "height": 1,
+    "passthru": true,
+    "multiple": false,
+    "options": [
+      {
+        "label": "Últims 7 dies",
+        "value": 7,
+        "type": "num"
+      },
+      {
+        "label": "Últim mes",
+        "value": 30,
+        "type": "num"
+      },
+      {
+        "label": "Últims 3 mesos",
+        "value": 90,
+        "type": "num"
+      },
+      {
+        "label": "Últims 6 mesos",
+        "value": 180,
+        "type": "num"
+      },
+      {
+        "label": "Últim any",
+        "value": 365,
+        "type": "num"
+      }
+    ],
+    "payload": "",
+    "topic": "period",
+    "topicType": "str",
+    "className": "",
+    "x": 180,
+    "y": 720,
+    "wires": [
+      [
+        "load_history"
+      ]
+    ]
+  },
+  {
+    "id": "ui_history_chart",
+    "type": "ui_chart",
+    "z": "tab_dashboard",
+    "name": "Gràfic Històric",
+    "group": "ui_group_history",
+    "order": 2,
+    "width": 12,
+    "height": 8,
+    "label": "Històric de Maniobres",
+    "chartType": "line",
+    "legend": "true",
+    "xformat": "HH:mm:ss",
+    "interpolate": "linear",
+    "nodata": "No hi ha dades per al període seleccionat",
+    "dot": false,
+    "ymin": "0",
+    "ymax": "100",
+    "removeOlder": 1,
+    "removeOlderPoints": "",
+    "removeOlderUnit": "3600",
+    "cutout": 0,
+    "useOneColor": false,
+    "useUTC": false,
+    "colors": [
+      "#1f77b4",
+      "#aec7e8",
+      "#ff7f0e",
+      "#2ca02c",
+      "#98df8a",
+      "#d62728",
+      "#ff9896",
+      "#9467bd",
+      "#c5b0d5"
+    ],
+    "outputs": 1,
+    "useDifferentColor": false,
+    "className": "",
+    "x": 750,
+    "y": 760,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "load_history",
+    "type": "function",
+    "z": "tab_dashboard",
+    "name": "Carregar Històric",
+    "func": "var days = msg.payload || 7;\nvar cutoffDate = new Date();\ncutoffDate.setDate(cutoffDate.getDate() - days);\n\n// Activar càrrega del fitxer CSV\nmsg.period_days = days;\nmsg.cutoff_date = cutoffDate;\nmsg.payload = \"\";\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 720,
+    "wires": [
+      [
+        "read_history_file"
+      ]
+    ]
+  },
+  {
+    "id": "read_history_file",
+    "type": "file in",
+    "z": "tab_dashboard",
+    "name": "Llegir historic-maniobres.csv",
+    "filename": "./historic-maniobres.csv",
+    "filenameType": "str",
+    "format": "utf8",
+    "chunk": false,
+    "sendError": false,
+    "encoding": "none",
+    "allProps": false,
+    "x": 690,
+    "y": 720,
+    "wires": [
+      [
+        "parse_history"
+      ]
+    ]
+  },
+  {
+    "id": "parse_history",
+    "type": "function",
+    "z": "tab_dashboard",
+    "name": "Processar Històric",
+    "func": "var csvData = msg.payload;\nvar cutoffDate = msg.cutoff_date;\n\nif (!csvData) {\n    return null;\n}\n\nvar lines = csvData.split('\\n');\nvar chartData = [];\n\n// Saltar la capçalera\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue;\n    \n    var parts = line.split(';');\n    if (parts.length < 8) continue;\n    \n    var timestamp = new Date(parts[0]);\n    var duration = parseInt(parts[1]) || 0;\n    var tankA_initial = parseFloat(parts[2]) || 0;\n    var tankB_initial = parseFloat(parts[3]) || 0;\n    var tankA_final = parseFloat(parts[4]) || 0;\n    var tankB_final = parseFloat(parts[5]) || 0;\n    \n    // Filtrar per data\n    if (timestamp < cutoffDate) continue;\n    \n    // Afegir punts al gràfic\n    chartData.push({\n        series: [\"Dipòsit A Inicial\", \"Dipòsit A Final\", \"Dipòsit B Inicial\", \"Dipòsit B Final\"],\n        data: [\n            [tankA_initial, timestamp.getTime()],\n            [tankA_final, timestamp.getTime()],\n            [tankB_initial, timestamp.getTime()],\n            [tankB_final, timestamp.getTime()]\n        ],\n        labels: [\"\"]\n    });\n}\n\n// Enviar dades al gràfic\nif (chartData.length > 0) {\n    for (var j = 0; j < chartData.length; j++) {\n        node.send({payload: chartData[j]});\n    }\n} else {\n    // Enviar missatge buit per netejar el gràfic\n    msg.payload = [];\n    return msg;\n}\n\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 760,
+    "wires": [
+      [
+        "ui_history_chart"
+      ]
+    ]
+  }
+]
