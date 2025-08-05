@@ -1,0 +1,64 @@
+PROJECTE: CONTROL AUTOMÀTIC DE BOMBA ENTRE DOS DIPÒSITS
+
+OBJECTIU
+--------
+Dissenyar i implementar un sistema automatitzat per controlar una bomba que impulsa aigua del dipòsit inferior (dipòsit A) al dipòsit superior (dipòsit B), utilitzant una Raspberry Pi, sondes de nivell 4-20 mA i un controlador DBM Control 1M/1T, mantenint la traçabilitat de les maniobres i permetent configuració i monitorització mitjançant un dashboard de Node-RED.
+
+COMPONENTS DEL SISTEMA
+----------------------
+1. Raspberry Pi 4B amb HAT PiRelay v2 (4 relés)
+2. Victron Cerbo GX amb GX Tank 140 (firmware 3.63)
+3. 2 sondes de nivell 4-20 mA:
+   - Canal 3: nivell dipòsit de baix (A)
+   - Canal 4: nivell dipòsit de dalt (B)
+4. DBM Control 1M/1T
+5. Node-RED (amb nodes MQTT, GPIO, email, file, dashboard)
+
+FUNCIONALITAT GENERAL
+---------------------
+- Lectura dels nivells dels dipòsits via MQTT des del Cerbo GX
+- Control de dos relés (GPIO 6 i 5) que actuen sobre els contactes secs del DBM Control
+- Execució automàtica diària d'una maniobra a una hora configurada (defecte 12:00)
+- Condicions d'activació i parada de la bomba basades en nivells
+- Registre persistent de cada maniobra
+- Enviament de correu amb resum de la maniobra (opcional)
+- Dashboard de monitorització i configuració amb validació
+
+LÒGICA DE FUNCIONAMENT
+----------------------
+1. A l’hora programada, la Raspberry Pi llegeix els nivells dels dos dipòsits.
+2. S’inicia la maniobra si:
+   - El nivell del dipòsit A és superior al seu llindar mínim (configurable, 15-25%)
+   - El nivell del dipòsit B és inferior al seu llindar mínim per omplir (configurable, 30-89%)
+3. Si es compleixen les condicions:
+   - Es tanquen els relés 3 i 4 (GPIO 6 i 5), activant la bomba mitjançant el DBM Control
+4. La maniobra finalitza immediatament si es compleix alguna d’aquestes condicions:
+   - El temps màxim de maniobra (configurable, 1-5 minuts) ha transcorregut
+   - El nivell del dipòsit B arriba o supera el llindar màxim (configurable, 90-100%)
+   - El nivell del dipòsit A cau per sota del llindar mínim
+5. En finalitzar:
+   - S’obren els relés per aturar la bomba
+   - Es registra la maniobra al fitxer historic-maniobres.json (format CSV delimitat per ;)
+   - Es mostra la informació al dashboard
+   - S’envia un correu si s’han definit els camps de correu i contrasenya de Gmail
+
+DASHBOARD NODE-RED
+------------------
+Tab 1: Monitorització
+- Nivell actual dels dipòsits
+- Informació de l’última maniobra (hora, durada, nivells, missatge final)
+
+Tab 2: Paràmetres del sistema
+- Llindars configurables amb validació
+- Hora execució (09:00–17:00)
+- Durada màxima (1–5 minuts)
+- Correu remitent i destinatari
+
+Tab 3: Històric
+- Gràfic de línies amb: hora execució, durada, nivells
+- Selector de període: 7 dies, 1/3/6 mesos, 1/2/3/5 anys
+
+FITXERS
+-------
+- config-parametres-logica.json: paràmetres persistents
+- historic-maniobres.json: registre cronològic de maniobres
