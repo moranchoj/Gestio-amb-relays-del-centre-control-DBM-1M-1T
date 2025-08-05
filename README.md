@@ -6,8 +6,8 @@
 
 Aquest sistema implementa el control automàtic d'una bomba que impulsa aigua del dipòsit inferior (A) al dipòsit superior (B), utilitzant:
 
-- **Raspberry Pi 4B** amb HAT PiRelay v2 per control de relés
-- **Victron Cerbo GX** amb GX Tank 140 per lectura de nivells via MQTT
+- **Raspberry Pi 4B** amb HAT PiRelay v2 per control de relés i Venus OS large 3.64
+- **Victron Cerbo GX** amb GX Tank 140 per lectura de nivells via MQTT i firmware 3.64
 - **DBM Control 1M/1T** per gestió de la bomba
 - **Node-RED** per l'automatització i dashboard de control
 
