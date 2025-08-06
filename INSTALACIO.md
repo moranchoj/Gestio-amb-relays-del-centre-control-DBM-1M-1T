@@ -12,29 +12,57 @@ Aquest projecte implementa un sistema automatitzat per al control d'una bomba en
 
 ## Instal·lació
 
-### 1. Preparació de la Raspberry Pi
+### 1. Preparació del Sistema Venus OS 3.64 Large
 
+**Important**: Venus OS 3.64 Large està basat en OpenEmbedded/Yocto, no utilitza `apt` com a gestor de paquets. Totes les comandes s'executen com a usuari `root`.
+
+#### Transferència de Fitxers al Sistema
+
+**Opció 1: SCP (recomanat)**
 ```bash
-# Actualitzar el sistema
-sudo apt update && sudo apt upgrade -y
-
-# Instal·lar Node.js i npm
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Instal·lar Node-RED
-sudo npm install -g --unsafe-perm node-red
-
-# Habilitar I2C i GPIO
-sudo raspi-config
-# Interfacing Options > I2C > Yes
-# Interfacing Options > GPIO > Yes
+# Des d'un ordinador amb el projecte descarregat
+scp -r Gestio-amb-relays-del-centre-control-DBM-1M-1T/ root@[IP_VENUS_OS]:/data/
 ```
 
-### 2. Instal·lació de Dependències
+**Opció 2: USB**
+1. Copieu els fitxers del projecte a una memòria USB
+2. Connecteu la USB al sistema Venus OS
+3. Munteu i copieu els fitxers:
+```bash
+mount /dev/sda1 /mnt
+cp -r /mnt/Gestio-amb-relays-del-centre-control-DBM-1M-1T/ /data/
+umount /mnt
+```
+
+**Opció 3: Descàrrega directa (si disponible)**
+```bash
+cd /data
+wget -O venus-pump-control.tar.gz [URL_DEL_PROJECTE]
+tar -xzf venus-pump-control.tar.gz
+```
+
+#### Instal·lació de Dependències
 
 ```bash
-cd /home/pi/dbm-pump-control
+# Canviar al directori del projecte
+cd /data/Gestio-amb-relays-del-centre-control-DBM-1M-1T
+
+# Venus OS 3.64 Large ja inclou Node.js i npm
+# Verificar versions disponibles
+node --version
+npm --version
+
+# Si Node-RED no està instal·lat, instal·lar-lo
+npm install -g node-red
+
+# Configurar permisos per a GPIO i I2C (ja estan habilitats a Venus OS)
+# Els dispositius GPIO són accessibles directament com a root
+```
+
+### 2. Instal·lació de Dependències del Projecte
+
+```bash
+cd /data/Gestio-amb-relays-del-centre-control-DBM-1M-1T
 npm install
 ```
 
@@ -49,6 +77,7 @@ npm install
 - Relé 3: GPIO 6
 - Relé 4: GPIO 5
 - Configuració: Actiu LOW (0 = relé tancat, 1 = relé obert)
+- **Important**: Venus OS utilitza `node-red-node-pi-gpio` per compatibilitat
 
 #### Email (Gmail)
 Per habilitar les notificacions per email:
@@ -61,11 +90,34 @@ Per habilitar les notificacions per email:
 # Executar Node-RED
 node-red flows.json
 
-# O amb pm2 per execució permanent
+# O amb pm2 per execució permanent (si pm2 està disponible)
 npm install -g pm2
 pm2 start node-red -- flows.json
 pm2 save
 pm2 startup
+
+# Alternativament, crear un servei systemd per Venus OS
+# Crear fitxer de servei
+cat > /etc/systemd/system/dbm-pump-control.service << EOF
+[Unit]
+Description=DBM Pump Control Node-RED
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/data/Gestio-amb-relays-del-centre-control-DBM-1M-1T
+ExecStart=/usr/bin/node-red flows.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Habilitar i iniciar el servei
+systemctl enable dbm-pump-control
+systemctl start dbm-pump-control
 ```
 
 ## Configuració
@@ -134,6 +186,34 @@ Cada maniobra es registra a `historic-maniobres.csv` amb:
 - `historic-maniobres.csv`: Registre històric de maniobres
 - `package.json`: Dependències del projecte
 
+## Consideracions Específiques per a Venus OS 3.64 Large
+
+### Característiques del Sistema
+- **Sistema operatiu**: Basat en OpenEmbedded/Yocto
+- **Gestor de paquets**: `opkg` (no `apt`)
+- **Usuari per defecte**: `root`
+- **Directori de dades**: `/data` (persistent entre actualitzacions)
+- **GPIO/I2C**: Pre-configurats i accessibles
+
+### Estructura de Directoris Recomanada
+```
+/data/
+├── Gestio-amb-relays-del-centre-control-DBM-1M-1T/
+│   ├── flows.json
+│   ├── config-parametres-logica.json
+│   ├── historic-maniobres.csv
+│   └── package.json
+```
+
+### Persistència de Dades
+Venus OS manté el directori `/data` entre actualitzacions del firmware. Assegureu-vos que tots els fitxers del projecte estiguin ubicats dins d'aquest directori.
+
+### Actualitzacions del Sistema
+Quan actualitzeu Venus OS:
+1. Les dades a `/data` es mantenen
+2. Pot ser necessari reinstal·lar dependències npm globals
+3. Els serveis systemd personalitzats es mantenen
+
 ## Troubleshooting
 
 ### Problemes Comuns
@@ -158,9 +238,29 @@ Cada maniobra es registra a `historic-maniobres.csv` amb:
 # Logs de Node-RED
 tail -f ~/.node-red/node-red.log
 
-# Logs del sistema
-journalctl -u node-red -f
+# Logs del servei systemd (si s'utilitza)
+journalctl -u dbm-pump-control -f
+
+# Logs del sistema Venus OS
+journalctl -f
 ```
+
+### Problemes Específics de Venus OS
+
+1. **Node-RED no arranca**
+   - Verificar que Node.js està instal·lat: `node --version`
+   - Comprovar ruta del node-red: `which node-red`
+   - Instal·lar si cal: `npm install -g node-red`
+
+2. **Permisos GPIO**
+   - Venus OS executa com a root, els GPIO són accessibles directament
+   - Verificar dispositius: `ls -la /dev/gpio*`
+   - No cal configuració addicional de permisos
+
+3. **Memòria limitada**
+   - Venus OS pot tenir restriccions de memòria
+   - Monitoritzar ús: `free -h`
+   - Ajustar paràmetres de Node-RED si cal
 
 ## Manteniment
 
